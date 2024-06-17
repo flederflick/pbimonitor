@@ -15,15 +15,15 @@ You can deploy the powershell scripts in two ways:
 ## Ensure you have the propper permissions
 
 - A [Power BI Administrator](https://docs.microsoft.com/en-us/power-bi/admin/service-admin-role) account to change the [Tenant Settings](https://docs.microsoft.com/en-us/power-bi/guidance/admin-tenant-settings)
-- Permissions to create an [Azure Active Directory Service Principal](https://docs.microsoft.com/en-us/azure/active-directory/develop/howto-create-service-principal-portal) 
+- Permissions to create an [Azure Active Directory Service Principal](https://docs.microsoft.com/en-us/azure/active-directory/develop/howto-create-service-principal-portal) - Only for local powershell options
 - Permissions to create/use an [Azure Active Directory Security Group](https://docs.microsoft.com/en-us/azure/active-directory/fundamentals/active-directory-groups-create-azure-portal)
 
 ## Create a Service Principal & Security Group
 
-> [!NOTE]  
+> [!NOTE]
 > Azure Active Directory is now call Entra ID.
 
-On Azure Active Directory:
+On Entra ID:
 
 1. Go to "App Registrations" select "New App" and leave the default options
 2. Generate a new "Client Secret" on "Certificates & secrets" and save the Secret text
@@ -89,7 +89,7 @@ Hosting
 - Storage Account - Create a new storage account to hold the data collected from the Azure Function
 - Plan Type - Consumption
 
-> [!NOTE]  
+> [!NOTE]
 > On a large Power BI tenant a dedicated plan might be needed because on consumption the functions have a 10 minute timeout. Learn more about timeouts [here](https://learn.microsoft.com/en-us/azure/azure-functions/functions-scale#timeout) and how to extend the timeout configuration host.json [here](https://learn.microsoft.com/en-us/azure/azure-functions/functions-host-json).
 
 ![image](https://user-images.githubusercontent.com/10808715/138612831-424d1085-40f9-4c59-bb31-9195eca2d55e.png)
@@ -128,7 +128,7 @@ Go back to the Azure Function page and click on "Configuration", and manually ad
 
 | Setting      | Value | Description
 | ----------- | ----------- |  --------- |
-| PBIMONITOR_StorageConnStr      |      | Optional, only if you want to store data in a different storage from the Storage Account (setting 'AzureWebJobsStorage')  
+| PBIMONITOR_StorageConnStr      |      | Optional, only if you want to store data in a different storage from the Storage Account (setting 'AzureWebJobsStorage')
 | PBIMONITOR_AppDataPath      | C:\home\data\pbimonitor       | Path to AppData in Azure Function Disk, its where the state file is stored
 | PBIMONITOR_ScriptsPath   | C:\home\site\wwwroot\Scripts        | Path to scripts on Azure Function Disk
 | PBIMONITOR_ServicePrincipalId      | [YOUR SERVICE PRINCIPAL ID]       |
@@ -147,7 +147,7 @@ Go back to the Azure Function page and click on "Configuration", and manually ad
 
 ### Enable Azure Azure Key Vault (Optional)
 
-Its possible to store the Service Principal secret in Azure Key Vault, see the [documentation](https://docs.microsoft.com/en-gb/azure/app-service/app-service-key-vault-references?tabs=azure-cli) for more detail: 
+Its possible to store the Service Principal secret in Azure Key Vault, see the [documentation](https://docs.microsoft.com/en-gb/azure/app-service/app-service-key-vault-references?tabs=azure-cli) for more detail:
 
 Create a system assigned managed identity for your Azure function:
 
@@ -167,11 +167,11 @@ Grant "Get" under "Secret Permissions":
 
 Reference your KeyVault on the Application Settings of Azure Function:
 
-| Setting      | Value 
-| ----------- | ----------- 
-| PBIMONITOR_ServicePrincipalId      | @Microsoft.KeyVault(VaultName=myvault;SecretName=appid)       
-| PBIMONITOR_ServicePrincipalSecret  | @Microsoft.KeyVault(VaultName=myvault;SecretName=pbilog)      
-| PBIMONITOR_ServicePrincipalTenantId | @Microsoft.KeyVault(VaultName=myvault;SecretName=tenantid)    
+| Setting      | Value
+| ----------- | -----------
+| PBIMONITOR_ServicePrincipalId      | @Microsoft.KeyVault(VaultName=myvault;SecretName=appid)
+| PBIMONITOR_ServicePrincipalSecret  | @Microsoft.KeyVault(VaultName=myvault;SecretName=pbilog)
+| PBIMONITOR_ServicePrincipalTenantId | @Microsoft.KeyVault(VaultName=myvault;SecretName=tenantid)
 
 ![image](https://user-images.githubusercontent.com/15087494/164720874-91f230be-ed1e-465d-a8cc-ac36715323d9.png)
 
@@ -274,11 +274,11 @@ Install-Module -Name MicrosoftPowerBIMgmt -RequiredVersion 1.2.1026
 Open the [Config File](./Config.json) and write the saved properties from the Service Principal:
 - AppId
 - AppSecret
-- Tenant Id 
+- Tenant Id
 
 ![image](https://user-images.githubusercontent.com/10808715/142396344-67cdd1d3-1a4f-4838-baff-4422c4e86b56.png)
 
-## Run 
+## Run
 
 The file [Fetch - Run](./Fetch%20-%20Run.ps1) is the entry point to call the other scripts.
 
