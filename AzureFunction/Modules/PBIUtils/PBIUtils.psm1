@@ -185,6 +185,7 @@ function Get-ArrayInBatches {
             $skip += $batchCount
         }
         $i++
+
     }
     while($batchItems.Count -ne 0 -and $batchItems.Count -ge $batchCount)
 }
@@ -226,21 +227,9 @@ function Wait-On429Error {
 }
 
 function Get-AuthToken() {
-    [cmdletbinding()]
-    param
-    (
-        [string]$resource
-    )
-
-    $accesstoken = Get-AuthTokenMI -resource $resource
-    # $accesstoken = Get-AuthTokenSPN -resource $resource
-    write-output $accesstoken
-}
-
-function Get-AuthTokenMI() {
     [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true)][Validateset('https://graph.microsoft.com/', 'https://graph.microsoft.com', 'https://analysis.windows.net/powerbi/api', 'https://analysis.windows.net/powerbi/api/', 'https://api.fabric.microsoft.com/', 'https://api.fabric.microsoft.com')][string]$resource
+        [parameter(Mandatory = $true)][Validateset('https://graph.microsoft.com/', 'https://analysis.windows.net/powerbi/api', 'https://api.fabric.microsoft.com/')][string]$resource
     )
 
     write-host "Getting token for resource: $resource"
@@ -248,34 +237,6 @@ function Get-AuthTokenMI() {
     $ProgressPreference = "SilentlyContinue"
     $response = Invoke-WebRequest -UseBasicParsing -Uri "$($env:IDENTITY_ENDPOINT)?resource=$resource&api-version=2019-08-01" -Headers $headers -RetryIntervalSec 5
     $token = ConvertFrom-Json $response
-    $accesstoken = $token.access_token
-    write-output $accesstoken
-}
-
-function Get-AuthTokenSPN {
-    [cmdletbinding()]
-    param
-    (
-        [string]$authority = "https://login.microsoftonline.com",
-        [string]$tenantid = $env:PBIMONITOR_ServicePrincipalTenantId,
-        [string]$appid = $env:PBIMONITOR_ServicePrincipalId,
-        [string]$appsecret = $env:PBIMONITOR_ServicePrincipalSecret,
-        [string]$resource = "https://api.fabric.microsoft.com/"
-    )
-
-    write-verbose "getting authentication token"
-    $granttype = "client_credentials"
-    $tokenuri = "https://login.microsoftonline.com/$($tenantId)/oauth2/token"
-    #$appsecret = [System.Web.HttpUtility]::urlencode($appsecret)
-    $body = @{
-        grant_type    = $granttype
-        client_id     = $appid
-        client_secret = $appsecret
-        resource      = $resource
-    }
-
-
-    $token = invoke-restmethod -uri $tokenuri -method Post -ContentType "application/x-www-form-urlencoded" -body $body
     $accesstoken = $token.access_token
     write-output $accesstoken
 }

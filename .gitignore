@@ -34,3 +34,8 @@ local.settings*
 Fetch - Run-Local.ps1
 Setup - DeployAzureFunction.ps1
 Tool - PublishDataflow.ps1
+AzureFunction.zip
+AzureFunction/Fabric token.ps1
+add powerbi permissions.ps1
+AzureFunction.zip
+/backup
