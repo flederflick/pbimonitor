@@ -187,55 +187,43 @@ function Get-ArrayInBatches {
     while($batchItems.Count -ne 0 -and $batchItems.Count -ge $batchCount)
 }
 
-function Wait-On429Error {
-    [cmdletbinding()]
-    param
-    (
-        [ScriptBlock]$script,
-        [int]$sleepSeconds = 3601,
-        [int]$tentatives = 1
-    )
+# function Wait-On429Error {
+#     [cmdletbinding()]
+#     param
+#     (
+#         [ScriptBlock]$script,
+#         [int]$sleepSeconds = 3601,
+#         [int]$tentatives = 1
+#     )
 
-    try {
-        Invoke-Command -ScriptBlock $script
-    } catch {
+#     try {
+#         Invoke-Command -ScriptBlock $script
+#     } catch {
 
-        $ex = $_.Exception
+#         $ex = $_.Exception
 
-        $errorText = $ex.ToString()
-        ## If code errors at this location it is likely due to a 429 error. The PowerShell comandlets do not handle 429 errors with the appropriate message. This code will cover the known errors codes.
-        if ($errorText -like "*Error reading JObject from JsonReader*" -or ($errorText -like "*429 (Too Many Requests)*" -or $errorText -like "*Response status code does not indicate success: *" -or $errorText -like "*You have exceeded the amount of requests allowed*")) {
+#         $errorText = $ex.ToString()
+#         ## If code errors at this location it is likely due to a 429 error. The PowerShell comandlets do not handle 429 errors with the appropriate message. This code will cover the known errors codes.
+#         if ($errorText -like "*Error reading JObject from JsonReader*" -or ($errorText -like "*429 (Too Many Requests)*" -or $errorText -like "*Response status code does not indicate success: *" -or $errorText -like "*You have exceeded the amount of requests allowed*")) {
 
-            Write-Host "'429 (Too Many Requests)' Error - Sleeping for $sleepSeconds seconds before trying again" -ForegroundColor Yellow
-            Write-Host "Printing Error for Logs: '$($errorText)'"
-            $tentatives = $tentatives - 1
+#             Write-Host "'429 (Too Many Requests)' Error - Sleeping for $sleepSeconds seconds before trying again" -ForegroundColor Yellow
+#             Write-Host "Printing Error for Logs: '$($errorText)'"
+#             $tentatives = $tentatives - 1
 
-            if ($tentatives -lt 0) {
-                throw "[Wait-On429Error] Max Tentatives reached!"
-            } else {
-                Start-Sleep -Seconds $sleepSeconds
+#             if ($tentatives -lt 0) {
+#                 throw "[Wait-On429Error] Max Tentatives reached!"
+#             } else {
+#                 Start-Sleep -Seconds $sleepSeconds
 
-                Wait-On429Error -script $script -sleepSeconds $sleepSeconds -tentatives $tentatives
-            }
-        } else {
-            throw
-        }
-    }
-}
+#                 Wait-On429Error -script $script -sleepSeconds $sleepSeconds -tentatives $tentatives
+#             }
+#         } else {
+#             throw
+#         }
+#     }
+# }
 
 function Get-AuthToken() {
-    [cmdletbinding()]
-    param
-    (
-        [string]$resource
-    )
-
-    $accesstoken = Get-AuthTokenMI -resource $resource
-    # $accesstoken = Get-AuthTokenSPN -resource $resource
-    write-output $accesstoken
-}
-
-function Get-AuthTokenMI() {
     [CmdletBinding()]
     param (
         [parameter(Mandatory = $true)][Validateset('https://graph.microsoft.com/', 'https://graph.microsoft.com', 'https://analysis.windows.net/powerbi/api', 'https://analysis.windows.net/powerbi/api/', 'https://api.fabric.microsoft.com/', 'https://api.fabric.microsoft.com')][string]$resource
@@ -250,33 +238,6 @@ function Get-AuthTokenMI() {
     write-output $accesstoken
 }
 
-function Get-AuthTokenSPN {
-    [cmdletbinding()]
-    param
-    (
-        [string]$authority = "https://login.microsoftonline.com",
-        [string]$tenantid = $env:PBIMONITOR_ServicePrincipalTenantId,
-        [string]$appid = $env:PBIMONITOR_ServicePrincipalId,
-        [string]$appsecret = $env:PBIMONITOR_ServicePrincipalSecret,
-        [string]$resource = "https://api.fabric.microsoft.com/"
-    )
-
-    write-verbose "getting authentication token"
-    $granttype = "client_credentials"
-    $tokenuri = "https://login.microsoftonline.com/$($tenantId)/oauth2/token"
-    #$appsecret = [System.Web.HttpUtility]::urlencode($appsecret)
-    $body = @{
-        grant_type    = $granttype
-        client_id     = $appid
-        client_secret = $appsecret
-        resource      = $resource
-    }
-
-
-    $token = invoke-restmethod -uri $tokenuri -method Post -ContentType "application/x-www-form-urlencoded" -body $body
-    $accesstoken = $token.access_token
-    write-output $accesstoken
-}
 
 function Read-FromGraphAPI {
     [CmdletBinding()]
