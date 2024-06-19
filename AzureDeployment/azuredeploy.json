@@ -1,0 +1,211 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "saName": {
+            "type": "string"
+        },
+        "faName": {
+            "type": "string"
+        },
+        "aspName": {
+            "type": "string"
+        },
+        "lawName": {
+            "type": "string"
+        },
+        "appInsName": {
+            "type": "string"
+        },
+        "lawRetention": {
+            "type": "int"
+        }
+    },
+    "variables": {
+        "storageAccountContributor": "17d1049b-9a84-46fb-8f53-869881c3d3ab",
+        "storageQueueDataContributor": "974c5e8b-45b9-4653-ba55-5f855dd0fb88",
+        "storageBlobDataOwner": "b7e6dc6d-f1e8-4753-8033-0f276bb0955b",
+        "storageContainerName": "pbimonitor"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Web/serverfarms",
+            "apiVersion": "2021-02-01",
+            "kind": "windows",
+            "name": "[parameters('aspName')]",
+            "location": "West Europe",
+            "sku": {
+                "name": "S1"
+            },
+            "properties": {
+                "reserved": false
+            }
+        },
+        {
+            "name": "[parameters('lawName')]",
+            "type": "Microsoft.OperationalInsights/workspaces",
+            "apiVersion": "2021-06-01",
+            "location": "West Europe",
+            "properties": {
+                "sku": {
+                    "name": "pergb2018"
+                },
+                "retentionInDays": "[parameters('lawRetention')]",
+                "workspaceCapping": {
+                    "dailyQuotaGb": -1
+                },
+                "publicNetworkAccessForIngestion": "Enabled",
+                "publicNetworkAccessForQuery": "Enabled"
+            }
+        },
+        {
+            "type": "Microsoft.Insights/components",
+            "apiVersion": "2020-02-02",
+            "name": "[parameters('appInsName')]",
+            "location": "West Europe",
+            "kind": "web",
+            "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces',parameters('lawName'))]"
+            ],
+            "properties": {
+                "Application_Type": "web",
+                "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces',parameters('lawName'))]",
+                "IngestionMode": "LogAnalytics",
+                "publicNetworkAccessForIngestion": "Enabled",
+                "publicNetworkAccessForQuery": "Enabled",
+                "DisableIpMasking": true
+            }
+        },
+        {
+            "name": "[parameters('saName')]",
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2019-04-01",
+            "location": "West Europe",
+            "sku": {
+                "name": "Standard_LRS"
+            },
+            "kind": "StorageV2",
+            "properties": {
+                "accessTier": "Hot",
+                "minimumTlsVersion": "TLS1_2",
+                "allowBlobPublicAccess": false,
+                "allowSharedKeyAccess": false,
+                "supportsHttpsTrafficOnly": true
+            },
+            "resources": [
+            ]
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+            "apiVersion": "2023-04-01",
+            "name": "[concat(parameters('saName'), '/default/', variables('storageContainerName'))]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('saName'))]"
+            ],
+            "properties": {
+                "immutableStorageWithVersioning": {
+                    "enabled": false
+                },
+                "defaultEncryptionScope": "$account-encryption-key",
+                "denyEncryptionScopeOverride": false,
+                "publicAccess": "None"
+            }
+        },
+        {
+            "name": "[parameters('faName')]",
+            "type": "Microsoft.Web/sites",
+            "apiVersion": "2019-08-01",
+            "kind": "functionapp",
+            "location": "West Europe",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts',parameters('saName'))]",
+                "[resourceId('Microsoft.Web/serverfarms',parameters('aspName'))]"
+            ],
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "properties": {
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms/',parameters('aspName'))]",
+                "httpsOnly": true,
+                "siteConfig": {
+                    "alwaysOn": true,
+                    "powerShellVersion": "7.4",
+                    "ftpsState": "Disabled",
+                    "use32BitWorkerProcess": false,
+                    "http20Enabled": true,
+                    "minTlsVersion": "1.2",
+                    "scmMinTlsVersion": "1.2",
+                    "appSettings": [
+                    ]
+                }
+            },
+            "resources": [
+            ]
+        },
+        {
+            "name": "[concat(parameters('faName'), '/', 'appsettings')]",
+            "type": "Microsoft.Web/sites/config",
+            "apiVersion": "2021-02-01",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites',parameters('faName'))]",
+                "[resourceId('Microsoft.Insights/components',parameters('appInsName'))]"
+            ],
+            "properties": {
+                "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(resourceId('microsoft.insights/components/', parameters('appInsName')), '2018-05-01-preview').InstrumentationKey]",
+                "AzureWebJobsStorage__accountname": "[parameters('saName')]",
+                "FUNCTIONS_EXTENSION_VERSION": "~4",
+                "FUNCTIONS_WORKER_RUNTIME": "powershell",
+                "WEBSITE_TIME_ZONE": "W. Europe Standard Time",
+                "PBIMONITOR_AppDataPath": "C:\\home\\data\\pbimonitor",
+                "PBIMONITOR_FullScanAfterDays": "30",
+                "PBIMONITOR_GraphExtractGroups": "False",
+                "PBIMONITOR_ScriptsPath": "C:\\home\\site\\wwwroot\\Scripts",
+                "PBIMONITOR_ServicePrincipalEnvironment": "Public",
+                "PBIMONITOR_StorageAccountName": "[parameters('saName')]",
+                "PBIMONITOR_StorageContainerName": "[variables('storageContainerName')]",
+                "PBIMONITOR_StorageRootPath": "raw"
+            }
+        },
+        {
+            "type": "Microsoft.Authorization/roleAssignments",
+            "apiVersion": "2022-04-01",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts',parameters('saName'))]",
+                "[resourceId('Microsoft.Web/sites',parameters('faName'))]"
+            ],
+            "name": "[guid(parameters('saName'),parameters('faName'),variables('storageAccountContributor'))]",
+            "properties": {
+                "roleDefinitionId": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', variables('storageAccountContributor'))]",
+                "principalId": "[reference(resourceId('Microsoft.Web/sites', parameters('faName')), '2016-08-01', 'Full').identity.principalId]"
+            }
+        },
+        {
+            "type": "Microsoft.Authorization/roleAssignments",
+            "apiVersion": "2022-04-01",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts',parameters('saName'))]",
+                "[resourceId('Microsoft.Web/sites',parameters('faName'))]"
+            ],
+            "name": "[guid(parameters('saName'),parameters('faName'),variables('storageBlobDataOwner'))]",
+            "properties": {
+                "roleDefinitionId": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', variables('storageBlobDataOwner'))]",
+                "principalId": "[reference(resourceId('Microsoft.Web/sites', parameters('faName')), '2016-08-01', 'Full').identity.principalId]"
+            }
+        },
+        {
+            "type": "Microsoft.Authorization/roleAssignments",
+            "apiVersion": "2022-04-01",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts',parameters('saName'))]",
+                "[resourceId('Microsoft.Web/sites',parameters('faName'))]"
+            ],
+            "name": "[guid(parameters('saName'),parameters('faName'),variables('storageQueueDataContributor'))]",
+            "properties": {
+                "roleDefinitionId": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', variables('storageQueueDataContributor'))]",
+                "principalId": "[reference(resourceId('Microsoft.Web/sites', parameters('faName')), '2016-08-01', 'Full').identity.principalId]"
+            }
+        }
+    ],
+    "outputs": {
+    }
+}

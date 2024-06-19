@@ -39,3 +39,5 @@ AzureFunction/Fabric token.ps1
 add powerbi permissions.ps1
 AzureFunction.zip
 /backup
+AzureDeployment/azuredeploy.parameters.json
+AzureDeployment/deploy.ps1
