@@ -56,8 +56,6 @@ function Get-PBIMonitorConfig {
         "GraphPaginateCount"              = $env:PBIMONITOR_GraphPaginateCount;
         "GraphExtractGroups"              = $flagExtractGroups;
         "ServicePrincipal"                = @{
-            "AppId"       = $env:PBIMONITOR_ServicePrincipalId;
-            "AppSecret"   = $env:PBIMONITOR_ServicePrincipalSecret;
             "TenantId"    = $env:PBIMONITOR_ServicePrincipalTenantId;
             "Environment" = $environment;
         }
