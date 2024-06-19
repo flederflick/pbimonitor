@@ -89,7 +89,7 @@
                 "accessTier": "Hot",
                 "minimumTlsVersion": "TLS1_2",
                 "allowBlobPublicAccess": false,
-                "allowSharedKeyAccess": false,
+                "allowSharedKeyAccess": true,
                 "supportsHttpsTrafficOnly": true
             },
             "resources": [
