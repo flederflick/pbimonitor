@@ -35,7 +35,7 @@
             "name": "[parameters('aspName')]",
             "location": "West Europe",
             "sku": {
-                "name": "S1"
+                "name": "F1"
             },
             "properties": {
                 "reserved": false
@@ -128,10 +128,10 @@
                 "serverFarmId": "[resourceId('Microsoft.Web/serverfarms/',parameters('aspName'))]",
                 "httpsOnly": true,
                 "siteConfig": {
-                    "alwaysOn": true,
+                    "alwaysOn": false,
                     "powerShellVersion": "7.4",
                     "ftpsState": "Disabled",
-                    "use32BitWorkerProcess": false,
+                    "use32BitWorkerProcess": true,
                     "http20Enabled": true,
                     "minTlsVersion": "1.2",
                     "scmMinTlsVersion": "1.2",
