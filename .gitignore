@@ -41,3 +41,4 @@ AzureFunction.zip
 /backup
 AzureDeployment/azuredeploy.parameters.json
 AzureDeployment/deploy.ps1
+AzureFunction.zip

@@ -40,6 +40,6 @@ if($azAccount -eq $null -or $AzWebapp -eq $null){
     exit
 }
 
-Set-AzContext -Subscription hannl-pg-ict-sub
+Set-AzContext -Subscription hannl-cloudbeheer-sub
 Publish-AzWebapp -ResourceGroupName phannlcbpbimonrg01 -Name phannlcbpbimonfa01 -ArchivePath "$currentPath\AzureFunction.zip" -Type zip -Clean -Restart
 
